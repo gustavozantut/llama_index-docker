@@ -35,7 +35,16 @@ RUN apt-get update --fix-missing \
 
 # Install dependencies
 RUN apt-get install --no-install-recommends --no-install-suggests -y \
-    git
+    git \
+    curl 
+
+
+# Install SQL-related dependencies
+RUN apt-get install -y curl gnupg2 unixodbc-dev
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+RUN curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
+RUN apt-get update
+RUN ACCEPT_EULA=Y apt-get install -y msodbcsql18
 
 # Create llama_index directory
 RUN mkdir -p ${LLAMA_INDEX_PATH} \
@@ -90,6 +99,7 @@ RUN conda install -n ${ANACONDA_ENV} -c conda-forge \
     mypy=0.991 \
     mypy_extensions=1.0.0 \
     numpy=1.24.2 \
+    openpyxl \
     pandas=1.5.3 \
     pathspec=0.11.1 \
     parso=0.8.3 \
@@ -103,12 +113,14 @@ RUN conda install -n ${ANACONDA_ENV} -c conda-forge \
     pydantic=1.10.6 \
     pydocstyle=6.3.0 \
     pygments=2.14.0 \
+    pyodbc \
     pytest-dotenv=0.5.2 \
     python-dotenv=1.0.0 \
     python=3.11.0 \
     pyyaml=6.0 \
     rake_nltk=1.0.6 \
     requests=2.28.2 \
+    sqlalchemy \
     stack_data=0.6.2 \
     snowballstemmer=2.2.0 \
     tenacity=8.2.2 \
@@ -121,12 +133,17 @@ RUN conda install -n ${ANACONDA_ENV} -c conda-forge \
     urllib3=1.26.15 \
     wcwidth=0.2.6 \
     wrapt=1.15.0 \
-    yarl=1.8.2
+    yarl=1.8.2 -y
+
 
 WORKDIR ${LLAMA_INDEX_PATH}
 
 # Build llama_index
 RUN conda run -n ${ANACONDA_ENV} pip install -r ${LLAMA_INDEX_PATH}/requirements.txt
+
+RUN conda run -n ${ANACONDA_ENV} pip install llama-index \
+    llama_index.llms.azure_openai \
+    llama-index-llms-openai 
 
 # Switch back to root
 USER root
